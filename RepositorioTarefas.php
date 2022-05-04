@@ -78,24 +78,30 @@ class RepositorioTarefas
         }
     }
 
-    private function buscar_tarefas(): array
+    private function buscar_tarefas()
     {
         $sqlBusca = 'SELECT * FROM tarefas';
         $resultado = $this->conexao->query($sqlBusca);
         $tarefas = [];
 
         while ($tarefa = $resultado->fetch_object('Tarefa')) {
+            $tarefa->setAnexos(
+                $this->buscar_anexos($tarefa->getId())
+            );
             $tarefas[] = $tarefa;
         }
 
         return $tarefas;
     }
 
-    private function buscar_tarefa(int $tarefa_id): Tarefa
+    private function buscar_tarefa($id)
     {
-        $sqlBusca = "SELECT * FROM tarefas WHERE id = {$tarefa_id}";
+        $sqlBusca = 'SELECT * FROM tarefas WHERE id = ' . $id;
         $resultado = $this->conexao->query($sqlBusca);
         $tarefa = $resultado->fetch_object('Tarefa');
+        $tarefa->setAnexos(
+            $this->buscar_anexos($tarefa->getId())
+        );
 
         return $tarefa;
 
@@ -106,4 +112,49 @@ class RepositorioTarefas
         $sqlRemover = "DELETE FROM tarefas WHERE id = {$tarefa_id}";
         $this->conexao->query($sqlRemover);
     }
+
+    public function buscar_anexos(int $tarefa_id): array
+    {
+        $sqlBusca = "SELECT * FROM anexos WHERE tarefa_id = {$tarefa_id}";
+        $resultado = $this->conexao->query($sqlBusca);
+
+        $anexos = array();
+
+        while ($anexo = $resultado->fetch_object('Anexo')) {
+            $anexos[] = $anexo;
+        }
+
+        return $anexos;
+    }
+
+    public function buscar_anexo(int $anexo_id): Anexo
+    {
+        $sqlBusca = "SELECT * FROM anexos WHERE id = {$anexo_id}";
+        $resultado = $this->conexao->query($sqlBusca);
+
+        return $resultado->fetch_object('Anexo');
+    }
+
+    public function salvar_anexo(Anexo $anexo)
+    {
+        $sqlGravar = "INSERT INTO anexos
+            (tarefa_id, nome, arquivo)
+            VALUES
+            (
+                {$anexo->getTarefaId()},
+                '{$anexo->getNome()}',
+                '{$anexo->getArquivo()}'
+            ) 
+            ";
+        
+        $this->conexao->query($sqlGravar);
+    }
+
+    public function remover_anexo(int $id)
+    {
+        $sqlRemover = "DELETE FROM anexos WHERE id = {$id}";
+        $this->conexao->query($conexao, $sqlRemover);
+    }
+
 }
+
